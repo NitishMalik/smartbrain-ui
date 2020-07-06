@@ -29,8 +29,8 @@ const initialState = {
   input: '',
   imageUrl: '',
   boxes: [],
-  route: 'home',
-  isSignedIn: true,
+  route: 'signin',
+  isSignedIn: false,
   isProfileOpen: false,
   user: {
     id: '',
@@ -50,6 +50,7 @@ class App extends Component {
   }
 
   loadUser = (data) => {
+    console.log(data);
     this.setState({
       user: {
         id: data.id,
@@ -151,7 +152,8 @@ class App extends Component {
             <Profile
               onToggleModal={this.onToggleModal}
               isProfileOpen={isProfileOpen}
-              user={user} />
+              user={user}
+              loadUser={this.loadUser} />
           </Modal>
         }
         {route === 'home'
