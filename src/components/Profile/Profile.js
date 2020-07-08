@@ -13,15 +13,18 @@ const Profile = ({ isProfileOpen, onToggleModal, user, loadUser }) => {
         fetch(`http://localhost:3000/profile/${id}`, {
             method: 'post',
             headers: {
-                'Content-Type': 'application/json'
+                'Content-Type': 'application/json',
+                'Authorization': window.sessionStorage.getItem('token')
             },
             body: JSON.stringify({
                 formInput: data
             })
         })
             .then(res => {
-                onToggleModal();
-                loadUser({ ...user, ...data })
+                if (res.status === 200 || res.status === 304) {
+                    onToggleModal();
+                    loadUser({ ...user, ...data })
+                }
             })
             .catch(err => console.log(err))
     }
@@ -70,12 +73,12 @@ const Profile = ({ isProfileOpen, onToggleModal, user, loadUser }) => {
                             Save
                         </button>
                         <button className='b pa2 grow pointer hover-white w-40 bg-light-red b--black-20'
-                            onClick={() => onToggleModal()}>
+                            onClick={onToggleModal}>
                             Cancel
                         </button>
                     </div>
                 </main>
-                <div className='modal-close' onClick={() => onToggleModal()}>
+                <div className='modal-close' onClick={onToggleModal}>
                     &times;
                 </div>
             </article>

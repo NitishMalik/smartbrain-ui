@@ -32,6 +32,7 @@ const initialState = {
   route: 'signin',
   isSignedIn: false,
   isProfileOpen: false,
+  badge: '',
   user: {
     id: '',
     name: '',
@@ -49,6 +50,36 @@ class App extends Component {
     this.state = initialState;
   }
 
+  componentDidMount() {
+    const token = window.sessionStorage.getItem('token');
+    if (token) {
+      fetch('http://localhost:3000/signin', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': token
+        }
+      }).then(res => res.json())
+        .then(data => {
+          if (data && data.userId) {
+            fetch(`http://localhost:3000/profile/${data.userId}`, {
+              method: 'GET',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': token
+              }
+            }).then(resp => resp.json())
+              .then(user => {
+                if (user && user.email) {
+                  this.loadUser(user);
+                  this.onRouteChange('home');
+                }
+              })
+          }
+        })
+    }
+  }
+
   loadUser = (data) => {
     console.log(data);
     this.setState({
@@ -63,24 +94,28 @@ class App extends Component {
   }
 
   calculateFaceLocation = (data) => {
-    console.log(data);
-    const boxes = data.outputs[0].data.regions.map(region => {
-      const clarifaiFace = region.region_info.bounding_box;
+    if (data && data.outputs) {
       const image = document.getElementById('inputimage');
       const width = Number(image.width);
       const height = Number(image.height);
-      return {
-        leftCol: clarifaiFace.left_col * width,
-        topRow: clarifaiFace.top_row * height,
-        rightCol: width - (clarifaiFace.right_col * width),
-        bottomRow: height - (clarifaiFace.bottom_row * height)
-      }
-    })
-    return boxes;
+      const boxes = data.outputs[0].data.regions.map(region => {
+        const clarifaiFace = region.region_info.bounding_box;
+        return {
+          leftCol: clarifaiFace.left_col * width,
+          topRow: clarifaiFace.top_row * height,
+          rightCol: width - (clarifaiFace.right_col * width),
+          bottomRow: height - (clarifaiFace.bottom_row * height)
+        }
+      })
+      return boxes;
+    }
+    return;
   }
 
   displayFaceBox = (boxes) => {
-    this.setState({ boxes: boxes });
+    if (boxes) {
+      this.setState({ boxes: boxes });
+    }
   }
 
   onInputChange = (event) => {
@@ -91,7 +126,10 @@ class App extends Component {
     this.setState({ imageUrl: this.state.input });
     fetch('http://localhost:3000/imageurl', {
       method: 'post',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': window.sessionStorage.getItem('token')
+      },
       body: JSON.stringify({
         input: this.state.input
       })
@@ -101,7 +139,10 @@ class App extends Component {
         if (response) {
           fetch('http://localhost:3000/image', {
             method: 'put',
-            headers: { 'Content-Type': 'application/json' },
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': window.sessionStorage.getItem('token')
+            },
             body: JSON.stringify({
               id: this.state.user.id
             })
@@ -119,6 +160,7 @@ class App extends Component {
   }
 
   onRouteChange = (route) => {
+    console.log("Called")
     if (route === 'signout') {
       return this.setState(initialState)
     } else if (route === 'home') {
@@ -137,7 +179,7 @@ class App extends Component {
       route,
       boxes,
       isProfileOpen,
-      user
+      user,
     } = this.state;
     return (
       <div className="App">
